@@ -116,6 +116,75 @@ export function dataTransferContainsFiles(
   );
 }
 
+function isSanitizableBinaryFile(file: File): boolean {
+  const mimeType = file.type.trim().toLowerCase();
+  const extension = file.name.split('.').pop()?.trim().toLowerCase();
+  if (mimeType === 'application/pdf' || extension === 'pdf') {
+    return true;
+  }
+  if (
+    mimeType ===
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    extension === 'docx'
+  ) {
+    return true;
+  }
+  return false;
+}
+
+async function extractTextFromPdf(file: File): Promise<string> {
+  // Dynamic import keeps pdfjs-dist out of the main content-script bundle.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfjsLib = (await import('pdfjs-dist/legacy/build/pdf.mjs')) as any;
+  // Disable the worker — required for MV3 CSP compliance in a content script.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+  const data = await file.arrayBuffer();
+  const doc = await pdfjsLib
+    .getDocument({
+      data,
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      useSystemFonts: true,
+    })
+    .promise.catch((err: unknown) => {
+      const name =
+        err instanceof Error
+          ? err.constructor.name
+          : ((err as { name?: string })?.name ?? '');
+      if (name === 'PasswordException') {
+        throw new Error(
+          'Il file PDF è protetto da password e non può essere analizzato.',
+        );
+      }
+      throw err;
+    });
+
+  const pageTexts: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((item: any) => 'str' in item)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((item: any) => item.str as string)
+      .join(' ');
+    if (pageText.trim()) {
+      pageTexts.push(pageText);
+    }
+  }
+  return pageTexts.join('\n\n');
+}
+
+async function extractTextFromDocx(file: File): Promise<string> {
+  // Dynamic import keeps mammoth out of the main content-script bundle.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mammoth = (await import('mammoth')) as any;
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return (result.value as string) ?? '';
+}
+
 function fileLooksTextual(file: File): boolean {
   const mimeType = file.type.trim().toLowerCase();
   if (mimeType.startsWith('text/')) {
@@ -208,26 +277,50 @@ export async function extractSanitizableTextFromDataTransfer(
     pushChunk(directText);
   }
 
-  const textualFiles = collectFilesFromDataTransfer(dataTransfer);
-  for (const file of textualFiles) {
-    if (!fileLooksTextual(file) || file.size > MAX_FILE_BYTES) {
+  const allFiles = collectFilesFromDataTransfer(dataTransfer);
+  for (const file of allFiles) {
+    if (file.size > MAX_FILE_BYTES) {
       skippedFileCount += 1;
       continue;
     }
 
-    const rawText = await file.text();
-    const normalizedFileText = normalizeLineBreaks(rawText).trim();
-    if (!normalizedFileText) {
+    if (fileLooksTextual(file)) {
+      const rawText = await file.text();
+      const normalizedFileText = normalizeLineBreaks(rawText).trim();
+      if (!normalizedFileText) {
+        skippedFileCount += 1;
+        continue;
+      }
+      extractedFileCount += 1;
+      const prefix =
+        allFiles.length > 1 || directText
+          ? `Contenuto allegato ${extractedFileCount}:\n`
+          : '';
+      pushChunk(`${prefix}${normalizedFileText}`);
+    } else if (isSanitizableBinaryFile(file)) {
+      try {
+        const extracted =
+          file.name.toLowerCase().endsWith('.pdf') ||
+          file.type === 'application/pdf'
+            ? await extractTextFromPdf(file)
+            : await extractTextFromDocx(file);
+        const normalizedExtracted = normalizeLineBreaks(extracted).trim();
+        if (!normalizedExtracted) {
+          skippedFileCount += 1;
+          continue;
+        }
+        extractedFileCount += 1;
+        const prefix =
+          allFiles.length > 1 || directText
+            ? `Contenuto allegato ${extractedFileCount}:\n`
+            : '';
+        pushChunk(`${prefix}${normalizedExtracted}`);
+      } catch {
+        skippedFileCount += 1;
+      }
+    } else {
       skippedFileCount += 1;
-      continue;
     }
-
-    extractedFileCount += 1;
-    const prefix =
-      textualFiles.length > 1 || directText
-        ? `Contenuto allegato ${extractedFileCount}:\n`
-        : '';
-    pushChunk(`${prefix}${normalizedFileText}`);
   }
 
   return {

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   buildSessionScope,
@@ -6,6 +6,7 @@ import {
   getSessionState,
 } from '../../services/sessionStore';
 import {
+  registerInputDebouncer,
   registerPasteInterceptor,
   sanitizeComposerText,
   sanitizeInterceptedText,
@@ -840,6 +841,192 @@ describe('sanitizeInterceptedText', () => {
         }),
       );
     });
+    stop();
+  });
+});
+
+describe('registerInputDebouncer', () => {
+  const scope = buildSessionScope(1, 'chat:debounce');
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    document.body.innerHTML =
+      '<main><form><div id="composer" contenteditable="true"></div></form></main>';
+  });
+
+  afterEach(async () => {
+    vi.useRealTimers();
+    await clearSessionState(scope.sessionKey);
+    document.body.innerHTML = '';
+  });
+
+  function makeAdapter(composerEl: HTMLElement) {
+    return {
+      containsComposerTarget: (t: EventTarget | null) =>
+        composerEl.contains(t as Node),
+      focusComposer: vi.fn(),
+      getComposerFingerprint: vi.fn(() => 'fp-a'),
+      getComposerText: vi.fn(() => composerEl.textContent ?? ''),
+      replaceComposerText: vi.fn((text: string) => {
+        composerEl.textContent = text;
+        return true;
+      }),
+    };
+  }
+
+  function makeSanitizeMock(sanitizedText = '[EMAIL_001]') {
+    return vi.fn().mockResolvedValue({
+      protocolVersion: 'v1',
+      sessionId: 'session-debounce',
+      sanitizedText,
+      sanitizedFingerprint: 'a'.repeat(64),
+      expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+      findings: [],
+      replacements: [{ applied: true }],
+      riskSummary: { lowConfidenceCount: 0, highRiskCount: 0 },
+    });
+  }
+
+  it('fires sanitization after the debounce idle period', async () => {
+    const composer = document.getElementById('composer')!;
+    composer.textContent = 'mario@example.com';
+    const sanitize = makeSanitizeMock();
+    const onSanitized = vi.fn();
+    const stop = registerInputDebouncer({
+      adapter: makeAdapter(composer),
+      sanitize,
+      getSessionScope: async () => scope,
+      debounceMs: 500,
+      onProcessing: vi.fn(),
+      onSanitized,
+      onError: vi.fn(),
+    });
+
+    composer.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(sanitize).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(sanitize).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
+  it('debounces multiple rapid inputs into a single sanitize call', async () => {
+    const composer = document.getElementById('composer')!;
+    composer.textContent = 'mario@example.com';
+    const sanitize = makeSanitizeMock();
+    const stop = registerInputDebouncer({
+      adapter: makeAdapter(composer),
+      sanitize,
+      getSessionScope: async () => scope,
+      debounceMs: 500,
+      onProcessing: vi.fn(),
+      onSanitized: vi.fn(),
+      onError: vi.fn(),
+    });
+
+    composer.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(200);
+    composer.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(200);
+    composer.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(500);
+    expect(sanitize).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
+  it('does not fire when the input event target is outside the composer', async () => {
+    const composer = document.getElementById('composer')!;
+    const sanitize = makeSanitizeMock();
+    const stop = registerInputDebouncer({
+      adapter: makeAdapter(composer),
+      sanitize,
+      getSessionScope: async () => scope,
+      debounceMs: 100,
+      onProcessing: vi.fn(),
+      onSanitized: vi.fn(),
+      onError: vi.fn(),
+    });
+
+    // Dispatch input on document body, not inside composer
+    document.body.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(200);
+    expect(sanitize).not.toHaveBeenCalled();
+    stop();
+  });
+
+  it('skips debounce during active IME composition and fires after compositionend', async () => {
+    const composer = document.getElementById('composer')!;
+    composer.textContent = 'テスト';
+    const sanitize = makeSanitizeMock();
+    const stop = registerInputDebouncer({
+      adapter: makeAdapter(composer),
+      sanitize,
+      getSessionScope: async () => scope,
+      debounceMs: 200,
+      onProcessing: vi.fn(),
+      onSanitized: vi.fn(),
+      onError: vi.fn(),
+    });
+
+    document.dispatchEvent(new Event('compositionstart', { bubbles: true }));
+    composer.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(400);
+    expect(sanitize).not.toHaveBeenCalled();
+
+    document.dispatchEvent(new Event('compositionend', { bubbles: true }));
+    composer.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(sanitize).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
+  it('cleanup cancels a pending debounce timer', async () => {
+    const composer = document.getElementById('composer')!;
+    composer.textContent = 'mario@example.com';
+    const sanitize = makeSanitizeMock();
+    const stop = registerInputDebouncer({
+      adapter: makeAdapter(composer),
+      sanitize,
+      getSessionScope: async () => scope,
+      debounceMs: 500,
+      onProcessing: vi.fn(),
+      onSanitized: vi.fn(),
+      onError: vi.fn(),
+    });
+
+    composer.dispatchEvent(new Event('input', { bubbles: true }));
+    stop(); // cancel before timer fires
+    await vi.advanceTimersByTimeAsync(600);
+    expect(sanitize).not.toHaveBeenCalled();
+  });
+
+  it('isSanitizing flag suppresses reentrant input events during write-back', async () => {
+    const composer = document.getElementById('composer')!;
+    composer.textContent = 'mario@example.com';
+    const sanitize = makeSanitizeMock();
+    const adapter = makeAdapter(composer);
+    // Simulate replaceComposerText dispatching a synthetic input event
+    const originalReplace = adapter.replaceComposerText;
+    adapter.replaceComposerText = vi.fn((text: string) => {
+      const result = originalReplace(text);
+      // Dispatch a synthetic input that mimics what the DOM would fire
+      composer.dispatchEvent(new Event('input', { bubbles: true }));
+      return result;
+    });
+
+    const stop = registerInputDebouncer({
+      adapter,
+      sanitize,
+      getSessionScope: async () => scope,
+      debounceMs: 200,
+      onProcessing: vi.fn(),
+      onSanitized: vi.fn(),
+      onError: vi.fn(),
+    });
+
+    composer.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(300);
+    // Should have been called exactly once despite the synthetic input during write-back
+    expect(sanitize).toHaveBeenCalledTimes(1);
     stop();
   });
 });

@@ -418,3 +418,89 @@ export function registerPasteInterceptor(
     document.removeEventListener('drop', handleDrop, true);
   };
 }
+
+export interface InputDebouncerOptions {
+  adapter: Pick<
+    ComposerAdapter,
+    | 'containsComposerTarget'
+    | 'focusComposer'
+    | 'getComposerFingerprint'
+    | 'getComposerText'
+    | 'replaceComposerText'
+  >;
+  sanitize: (payload: SanitizeRequest) => Promise<SanitizeResponse>;
+  getSessionScope: () => Promise<SessionScope>;
+  debounceMs?: number;
+  onProcessing: () => void;
+  onSanitized: (result: SanitizeComposerResult) => void;
+  onError: (message: string) => void;
+}
+
+export function registerInputDebouncer(
+  options: InputDebouncerOptions,
+): () => void {
+  let isSanitizing = false;
+  let isComposing = false;
+  let debounceTimer: ReturnType<typeof window.setTimeout> | null = null;
+
+  const handleCompositionStart = () => {
+    isComposing = true;
+  };
+  const handleCompositionEnd = () => {
+    isComposing = false;
+  };
+
+  const handleInput = (event: Event) => {
+    if (isSanitizing || isComposing) {
+      return;
+    }
+    if (!options.adapter.containsComposerTarget(event.target)) {
+      return;
+    }
+    if (debounceTimer !== null) {
+      window.clearTimeout(debounceTimer);
+    }
+    debounceTimer = window.setTimeout(() => {
+      debounceTimer = null;
+      isSanitizing = true;
+      options.onProcessing();
+      void (async () => {
+        try {
+          const result = await sanitizeComposerText('manual', {
+            adapter: options.adapter,
+            sanitize: options.sanitize,
+            scope: await options.getSessionScope(),
+          });
+          if (!result.ignored) {
+            options.onSanitized(result);
+          }
+        } catch (error) {
+          options.onError(
+            error instanceof Error
+              ? error.message
+              : 'Errore durante la verifica automatica del testo digitato.',
+          );
+        } finally {
+          isSanitizing = false;
+        }
+      })();
+    }, options.debounceMs ?? 1500);
+  };
+
+  document.addEventListener('compositionstart', handleCompositionStart, true);
+  document.addEventListener('compositionend', handleCompositionEnd, true);
+  document.addEventListener('input', handleInput, true);
+  return () => {
+    if (debounceTimer !== null) {
+      window.clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    document.removeEventListener(
+      'compositionstart',
+      handleCompositionStart,
+      true,
+    );
+    document.removeEventListener('compositionend', handleCompositionEnd, true);
+    document.removeEventListener('input', handleInput, true);
+  };
+}

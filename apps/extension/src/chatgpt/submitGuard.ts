@@ -147,6 +147,17 @@ export function deriveSubmitGuardVerdict(
 ): SubmitGuardVerdict {
   const { currentText, currentFingerprint, sessionState } = inputs;
 
+  if (sessionState?.unsafeAttachmentsPresent) {
+    return {
+      allowed: false,
+      state: 'unsafe_attachments',
+      reason:
+        sessionState.unsafeAttachmentsReason ??
+        'Sono presenti allegati nel prompt che non possono essere analizzati. Rimuovili prima di inviare.',
+      currentFingerprint,
+    };
+  }
+
   if (!currentText.trim()) {
     return {
       allowed: true,

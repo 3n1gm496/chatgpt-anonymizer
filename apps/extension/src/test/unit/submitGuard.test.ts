@@ -72,7 +72,7 @@ describe('submit guard state machine', () => {
     });
   });
 
-  it('does not block submit only because an attachment warning is still marked in session state', async () => {
+  it('blocks submit when unsafeAttachmentsPresent is true, even with empty composer', async () => {
     await expect(
       evaluateSubmitGuard(
         '',
@@ -97,8 +97,72 @@ describe('submit guard state machine', () => {
         },
       ),
     ).resolves.toMatchObject({
-      allowed: true,
-      state: 'sanitized_current',
+      allowed: false,
+      state: 'unsafe_attachments',
+      reason: 'Sono presenti file non analizzati completamente.',
+    });
+  });
+
+  it('blocks submit when unsafeAttachmentsPresent is true even with already-sanitized text', async () => {
+    const sanitizedText = 'Il paziente [PERSON_001] ha chiamato.';
+    await expect(
+      evaluateSubmitGuard(
+        sanitizedText,
+        {
+          sessionKey: 'scope',
+          tabId: 1,
+          conversationId: 'chat:new',
+          engineConversationId: 'tab:1:chat:new',
+          sessionId: 'session-1',
+          sanitizedText,
+          sanitizedFingerprint: 'fp-sanitized',
+          sourceTextFingerprint: 'fp-source',
+          replacementCount: 1,
+          lowConfidenceCount: 0,
+          reviewPending: false,
+          reviewDecisions: {},
+          engineHealthy: true,
+          revision: 1,
+          unsafeAttachmentsPresent: true,
+          unsafeAttachmentsReason:
+            'Sono presenti allegati caricati direttamente in ChatGPT.',
+        },
+        {
+          healthCheck: vi.fn().mockResolvedValue(true),
+        },
+      ),
+    ).resolves.toMatchObject({
+      allowed: false,
+      state: 'unsafe_attachments',
+      reason: 'Sono presenti allegati caricati direttamente in ChatGPT.',
+    });
+  });
+
+  it('uses the hardcoded fallback reason when unsafeAttachmentsReason is undefined', async () => {
+    const result = deriveSubmitGuardVerdict({
+      currentText: '',
+      currentFingerprint: 'fp',
+      sessionState: {
+        sessionKey: 'scope',
+        tabId: 1,
+        conversationId: 'chat:new',
+        engineConversationId: 'tab:1:chat:new',
+        sessionId: 'session-1',
+        replacementCount: 0,
+        lowConfidenceCount: 0,
+        reviewPending: false,
+        reviewDecisions: {},
+        engineHealthy: true,
+        revision: 1,
+        unsafeAttachmentsPresent: true,
+      },
+      engineReachable: true,
+    });
+    expect(result).toMatchObject({
+      allowed: false,
+      state: 'unsafe_attachments',
+      reason:
+        'Sono presenti allegati nel prompt che non possono essere analizzati. Rimuovili prima di inviare.',
     });
   });
 

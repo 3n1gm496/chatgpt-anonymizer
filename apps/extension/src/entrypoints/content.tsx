@@ -6,6 +6,7 @@ import type { RuntimeMessage } from '@chatgpt-anonymizer/contracts';
 
 import { createComposerAdapter } from '../chatgpt/composerAdapter';
 import {
+  registerInputDebouncer,
   registerPasteInterceptor,
   sanitizeComposerText,
 } from '../chatgpt/pasteInterceptor';
@@ -488,6 +489,34 @@ export default defineContentScript({
       },
     });
 
+    const stopInputDebouncer = registerInputDebouncer({
+      adapter,
+      sanitize,
+      getSessionScope: syncRuntimeContext,
+      onProcessing: () =>
+        setStatus('processing', 'Sto verificando il testo digitato...'),
+      onSanitized: (result) => {
+        if (!result.ignored && result.response && result.state) {
+          setStatus(
+            'ready',
+            result.response.replacements.length > 0
+              ? 'Testo digitato protetto automaticamente.'
+              : 'Testo verificato, nessun dato sensibile rilevato.',
+            {
+              replacementCount: result.state.replacementCount,
+              autoHideMs: 2400,
+            },
+          );
+        }
+      },
+      onError: (message) => {
+        void patchSessionState(currentScope.sessionKey, {
+          engineHealthy: false,
+        });
+        setStatus('error', message);
+      },
+    });
+
     const stopSubmitGuard = registerSubmitGuard({
       adapter,
       getState: async () => {
@@ -544,6 +573,7 @@ export default defineContentScript({
       }
       isCleanedUp = true;
       stopPasteInterceptor();
+      stopInputDebouncer();
       stopSubmitGuard();
       stopResponseOverlay();
       attachmentObserver.disconnect();
