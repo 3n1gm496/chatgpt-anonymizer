@@ -1,0 +1,4 @@
+Incident report:
+Contact user@example.com from host api.internal.example.com
+Source IP: 203.0.113.10
+Phone: +39 347 555 0101

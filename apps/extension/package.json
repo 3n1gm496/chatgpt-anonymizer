@@ -1,0 +1,21 @@
+{
+  "name": "@chatgpt-anonymizer/extension",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "wxt build --mode production",
+    "build:dev": "wxt build --mode development",
+    "build:prod": "wxt build --mode production",
+    "dev": "wxt",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "package": "wxt zip",
+    "test": "vitest run src/test/unit src/test/integration --environment jsdom"
+  },
+  "dependencies": {
+    "@chatgpt-anonymizer/contracts": "workspace:*",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "wxt": "^0.20.6"
+  }
+}

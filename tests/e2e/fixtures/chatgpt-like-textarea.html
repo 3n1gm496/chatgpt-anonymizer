@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatGPT-Like Textarea Fixture</title>
+  </head>
+  <body style="font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; padding: 32px;">
+    <main>
+      <form id="composer-form">
+        <textarea
+          id="composer"
+          aria-label="Message"
+          style="width: 100%; min-height: 120px"
+        ></textarea>
+        <button id="send" type="submit" aria-label="Send message">Send</button>
+      </form>
+      <div id="status"></div>
+      <aside id="review-drawer" hidden></aside>
+      <article id="assistant-response">Response with [EMAIL_001]</article>
+      <button id="rehydrate-toggle" type="button">Mostra originali</button>
+    </main>
+  </body>
+</html>

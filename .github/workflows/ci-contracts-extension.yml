@@ -1,0 +1,82 @@
+name: ci-contracts-extension
+
+on:
+  pull_request:
+    paths:
+      - 'apps/extension/**'
+      - 'packages/contracts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.base.json'
+      - '.github/workflows/ci-contracts-extension.yml'
+  push:
+    branches: ['main']
+    paths:
+      - 'apps/extension/**'
+      - 'packages/contracts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.base.json'
+      - '.github/workflows/ci-contracts-extension.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contracts-extension:
+    name: Contracts and Extension
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+          cache-dependency-path: 'pnpm-lock.yaml'
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint TypeScript workspace
+        run: pnpm lint:ts
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Test contracts
+        run: pnpm --filter @chatgpt-anonymizer/contracts test
+
+      - name: Test extension
+        run: pnpm --filter @chatgpt-anonymizer/extension test
+
+      - name: Build contracts
+        run: pnpm build:contracts
+
+      - name: Build extension bundle
+        run: pnpm build:extension
+
+      - name: Package extension zip
+        run: pnpm build:extension:zip
+
+      - name: Upload contracts artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: contracts-dist
+          path: packages/contracts/dist
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-build
+          path: .output

@@ -1,0 +1,26 @@
+Metadata-Version: 2.4
+Name: chatgpt-anonymizer-local-engine
+Version: 0.1.0
+Summary: Local FastAPI engine for ChatGPT clipboard anonymization
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: cryptography<46.0.0,>=45.0.0
+Requires-Dist: fastapi<1.0.0,>=0.116.1
+Requires-Dist: pydantic<3.0.0,>=2.11.7
+Requires-Dist: starlette<1.0.0,>=0.46.2
+Requires-Dist: uvicorn[standard]<1.0.0,>=0.35.0
+Provides-Extra: dev
+Requires-Dist: build<2.0.0,>=1.2.2; extra == "dev"
+Requires-Dist: httpx<1.0.0,>=0.28.1; extra == "dev"
+Requires-Dist: pytest<9.0.0,>=8.4.2; extra == "dev"
+Requires-Dist: ruff<0.13.0,>=0.12.11; extra == "dev"
+
+# ChatGPT Anonymizer Local Engine
+
+FastAPI service bound to `127.0.0.1` that receives pasted text from the browser extension, detects sensitive values, stores reversible mappings in encrypted local state, and supports local rehydration through the shared localhost protocol.
+
+Run locally after dev install:
+
+```bash
+chatgpt-anonymizer-engine
+```

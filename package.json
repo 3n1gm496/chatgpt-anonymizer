@@ -1,0 +1,61 @@
+{
+  "name": "chatgpt-anonymizer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.10.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "bootstrap": "./scripts/bootstrap.sh",
+    "build": "./scripts/build.sh all",
+    "build:contracts": "./scripts/build.sh contracts",
+    "build:engine": "./scripts/build.sh engine",
+    "build:extension": "./scripts/build.sh extension",
+    "build:extension:dev": "./scripts/build.sh extension:dev",
+    "build:extension:zip": "./scripts/build.sh extension:zip",
+    "dev": "./scripts/dev.sh",
+    "dev:engine": "bash -lc 'source ./scripts/lib/toolchain.sh && cd services/local-engine && PYTHONPATH=src \"$PYTHON_BIN\" -m local_engine.main'",
+    "dev:extension": "bash -lc 'source ./scripts/lib/toolchain.sh && pnpm_cmd --filter @chatgpt-anonymizer/extension dev'",
+    "lint": "./scripts/lint.sh",
+    "lint:engine": "bash -lc 'source ./scripts/lib/toolchain.sh && cd services/local-engine && \"$PYTHON_BIN\" -m ruff check .'",
+    "manual:browser": "./scripts/manual-browser-test.sh start",
+    "manual:browser:status": "./scripts/manual-browser-test.sh status",
+    "manual:browser:stop": "./scripts/manual-browser-test.sh stop",
+    "lint:ts": "eslint \"{apps,packages,tests}/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"{apps,packages,tests,docs}/**/*.{ts,tsx,md,json,yml,yaml}\"",
+    "test": "./scripts/test.sh",
+    "test:e2e": "./scripts/test.sh e2e",
+    "test:engine": "bash -lc 'source ./scripts/lib/toolchain.sh && cd services/local-engine && PYTHONPATH=src \"$PYTHON_BIN\" -m pytest tests/unit tests/integration -q'",
+    "test:ts": "bash -lc 'source ./scripts/lib/toolchain.sh && pnpm_cmd --filter @chatgpt-anonymizer/contracts test && pnpm_cmd --filter @chatgpt-anonymizer/extension test'",
+    "test:unit": "./scripts/test.sh unit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "semi": true,
+    "trailingComma": "all"
+  }
+}

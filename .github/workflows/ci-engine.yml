@@ -1,0 +1,55 @@
+name: ci-engine
+
+on:
+  pull_request:
+    paths:
+      - 'services/local-engine/**'
+      - '.github/workflows/ci-engine.yml'
+  push:
+    branches: ['main']
+    paths:
+      - 'services/local-engine/**'
+      - '.github/workflows/ci-engine.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: Local Engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: 'services/local-engine/pyproject.toml'
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install engine dependencies
+        run: python -m pip install build setuptools wheel -e "./services/local-engine[dev]"
+
+      - name: Ruff
+        run: python -m ruff check services/local-engine
+
+      - name: Pytest unit
+        run: python -m pytest services/local-engine/tests/unit -q
+
+      - name: Pytest integration
+        run: python -m pytest services/local-engine/tests/integration -q
+
+      - name: Build wheel and sdist
+        run: python -m build --no-isolation services/local-engine --outdir services/local-engine/dist
+
+      - name: Upload engine package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-engine-dist
+          path: services/local-engine/dist

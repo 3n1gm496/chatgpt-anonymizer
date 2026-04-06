@@ -1,0 +1,196 @@
+:root {
+  --cga-teal: #0d5965;
+  --cga-teal-soft: rgba(13, 89, 101, 0.14);
+  --cga-sand: #f6f1e8;
+  --cga-ink: #17313a;
+  --cga-warning: #b45309;
+  --cga-danger: #b42318;
+  --cga-surface: rgba(255, 251, 245, 0.95);
+}
+
+#cga-status-root,
+#cga-review-root {
+  all: initial;
+}
+
+.cga-pill {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483640;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: min(300px, calc(100vw - 24px));
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 251, 245, 0.94), #ffffff);
+  border: 1px solid var(--cga-teal-soft);
+  color: var(--cga-ink);
+  font: 500 12px/1.35 "IBM Plex Sans", "Segoe UI", sans-serif;
+  box-shadow: 0 10px 24px rgba(11, 36, 41, 0.12);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.cga-pill__label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(13, 89, 101, 0.1);
+  color: var(--cga-teal);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+
+.cga-pill__headline {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.cga-pill__message {
+  color: rgba(23, 49, 58, 0.8);
+  font-size: 11px;
+}
+
+.cga-pill--processing {
+  border-color: rgba(180, 83, 9, 0.24);
+}
+
+.cga-pill--processing .cga-pill__label {
+  background: rgba(180, 83, 9, 0.12);
+  color: var(--cga-warning);
+}
+
+.cga-pill--blocked,
+.cga-pill--error {
+  border-color: rgba(180, 35, 24, 0.28);
+}
+
+.cga-pill--blocked .cga-pill__label,
+.cga-pill--error .cga-pill__label {
+  background: rgba(180, 35, 24, 0.12);
+  color: var(--cga-danger);
+}
+
+.cga-pill--notice .cga-pill__label {
+  background: rgba(13, 89, 101, 0.12);
+  color: var(--cga-teal);
+}
+
+.cga-review-drawer {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483639;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 14px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(13, 89, 101, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(255, 251, 245, 0.98), rgba(248, 244, 236, 0.98));
+  border: 1px solid rgba(13, 89, 101, 0.18);
+  box-shadow: 0 18px 36px rgba(11, 36, 41, 0.18);
+  color: var(--cga-ink);
+  font: 500 13px/1.45 "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+.cga-review-drawer__header,
+.cga-review-drawer__footer,
+.cga-review-card__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.cga-review-drawer__header h2,
+.cga-review-drawer__header p {
+  margin: 0;
+}
+
+.cga-review-drawer__list {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.cga-review-card {
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(13, 89, 101, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.cga-review-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.cga-review-card__header span {
+  color: rgba(23, 49, 58, 0.72);
+  font-size: 12px;
+}
+
+.cga-review-card__placeholder {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+}
+
+.cga-review-card button,
+.cga-review-drawer button,
+.cga-response-toggle {
+  border: 1px solid rgba(13, 89, 101, 0.18);
+  border-radius: 999px;
+  background: white;
+  color: var(--cga-ink);
+  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.cga-review-card button:hover,
+.cga-review-drawer button:hover,
+.cga-response-toggle:hover {
+  transform: translateY(-1px);
+  border-color: rgba(13, 89, 101, 0.3);
+}
+
+.cga-review-card button.is-active {
+  background: var(--cga-teal);
+  color: white;
+}
+
+.cga-response-toggle {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  .cga-pill {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+
+  .cga-review-drawer {
+    top: auto;
+    right: 12px;
+    bottom: 64px;
+    left: 12px;
+    width: auto;
+  }
+}

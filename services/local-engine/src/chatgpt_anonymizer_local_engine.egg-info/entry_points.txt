@@ -1,0 +1,2 @@
+[console_scripts]
+chatgpt-anonymizer-engine = local_engine.main:main

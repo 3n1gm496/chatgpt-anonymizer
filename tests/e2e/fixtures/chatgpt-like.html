@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatGPT-Like Fixture</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 32px;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        background: linear-gradient(180deg, #f6f0e6, #ffffff);
+        color: #17313a;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      form,
+      article,
+      aside {
+        border-radius: 18px;
+        border: 1px solid rgba(13, 89, 101, 0.16);
+        background: rgba(255, 255, 255, 0.92);
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      #composer {
+        min-height: 120px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(13, 89, 101, 0.16);
+        background: #fffefb;
+      }
+      #status {
+        min-height: 24px;
+        font-weight: 600;
+      }
+      #review-drawer button,
+      #rehydrate-toggle,
+      #send {
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <form id="composer-form">
+        <label for="composer">Prompt</label>
+        <div
+          id="composer"
+          role="textbox"
+          aria-multiline="true"
+          contenteditable="true"
+        ></div>
+        <div style="margin-top: 12px">
+          <button id="send" type="submit" aria-label="Send message">Send</button>
+        </div>
+      </form>
+      <div id="status" aria-live="polite"></div>
+      <aside id="review-drawer" hidden></aside>
+      <article id="assistant-response">Response with [EMAIL_001]</article>
+      <button id="rehydrate-toggle" type="button">Mostra originali</button>
+    </main>
+  </body>
+</html>

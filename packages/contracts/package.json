@@ -1,0 +1,25 @@
+{
+  "name": "@chatgpt-anonymizer/contracts",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "test": "vitest run src/api.test.ts"
+  },
+  "dependencies": {
+    "zod": "^4.1.8"
+  }
+}
