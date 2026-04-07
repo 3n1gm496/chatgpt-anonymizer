@@ -6,7 +6,17 @@
 
 This release does not expand product scope. It prepares the text-first, extension-first workflow for controlled pilot deployment.
 
-## Pilot Hardening Summary (2026-04-06)
+## Pilot Hardening Summary (2026-04-07 — patch 2)
+
+Three coverage gaps were closed after the initial pilot release:
+
+- **Typed-text on-the-fly sanitization**: manually typed text is now sanitized after 1500ms idle via an input debouncer. Previously, typed text was only sanitized at submit time.
+- **PDF and DOCX text extraction on paste/drop**: text content is extracted from pasted/dropped PDF files (via pdfjs-dist, no-worker) and DOCX files (via mammoth) and sent through the same sanitization pipeline as plain text.
+- **Submit blocked when native ChatGPT uploads are present**: the submit guard now returns `unsafe_attachments / allowed: false` when `unsafeAttachmentsPresent` is true in session state. Previously this flag was set but never checked at submit time.
+
+Test count after this patch: **69 TS unit/integration + 28 Python = 97 total**.
+
+## Pilot Hardening Summary (2026-04-06 — patch 1)
 
 The following reliability issues were identified and fixed before the pilot release:
 
@@ -37,9 +47,11 @@ The pilot label identifies the rollout wave. The shipped artifacts remain on pro
 
 ## Required Pilot Flows
 
-- paste sanitization before submit
+- paste sanitization before submit (text, PDF, DOCX)
+- on-the-fly sanitization of typed text (1500ms debounce)
 - submit guard when engine is unreachable
 - submit guard when text becomes stale after edit
+- submit blocked when native ChatGPT uploads are present
 - low-confidence review drawer
 - local-only response rehydration toggle
 - popup/session reset flow
@@ -61,14 +73,16 @@ The pilot label identifies the rollout wave. The shipped artifacts remain on pro
 
 ## Known Limitations
 
-- text-first scope only
-- no file or image anonymization
+- text extraction scope: prompt text and text extracted from pasted/dropped PDF and DOCX files are protected; image files (PNG, JPEG, etc.) are not sanitized
+- PDFs pasted with no text layer (scanned documents), password-protected PDFs, and corrupt DOCX files are skipped with a visible notice
+- files uploaded directly through ChatGPT's native file upload button are not sanitized — submit is blocked when such files are detected, with a message asking the user to remove them
 - no remote management, auth, or central mapping sync
 - response rehydration remains conservative around complex rich-response layouts
 - local Playwright execution may vary on sandboxed hosts even though CI workflows are prepared
 - IME flows (Japanese, Chinese, Korean) have not been validated in a real browser pilot session — skipping is implemented but not user-tested
 - caret position after paste lands at end of sanitized text, not at the original paste cursor position (expected behavior for an anonymization tool)
 - duplicate-tab session isolation depends on browser `tabId`; `tabId = 0` fallback is weaker than the normal tab-scoped path
+- the "ML detector" (`ml:local-heuristic`) is a set of regex heuristics for PERSON names, USERNAMEs, and custom IDs — it is not a neural network model; it runs on every request (`enableMl: true` is hardcoded in the extension)
 
 ## Recommended Pilot Decision
 

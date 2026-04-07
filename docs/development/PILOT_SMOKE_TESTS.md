@@ -199,18 +199,39 @@ For a broader real-browser regression pass, use the expanded checklist in [MANUA
 
 ---
 
-### S11 — File Limitation Notice
+### S11a — PDF and DOCX Text Extraction on Paste
 
 **Steps:**
 
-1. Paste or drag a binary file (e.g. a PDF or PNG) with no accompanying text.
+1. Paste or drag a PDF file that contains a text layer (not a scanned image PDF) with no accompanying text.
 2. Observe the extension behavior.
 
 **Expected:**
 
-- the extension shows a visible notice that the attachment was not anonymized automatically
+- the extension extracts the text content from the PDF, sanitizes it, and writes it to the composer as plain text
+- the status pill shows a sanitized/ready state (not an error or skip notice)
+- the original PDF file is not uploaded to ChatGPT; only the extracted sanitized text appears in the composer
+
+Repeat with a `.docx` file — same expected behavior: text extracted, sanitized, written to composer.
+
+**Failure severity:** `major` — PDF/DOCX text content must be sanitized before it reaches the composer
+
+---
+
+### S11b — Non-Extractable File Notice
+
+**Steps:**
+
+1. Paste or drag a binary file that is not a PDF or DOCX (e.g. a PNG image or a zip archive) with no accompanying text.
+2. Observe the extension behavior.
+
+**Expected:**
+
+- the extension shows a visible notice that the file was not sanitized automatically (skipped file count > 0)
 - no false sanitization happens
 - no broken upload state in the ChatGPT composer
+
+Also verify with: a password-protected PDF, a scanned PDF (no text layer), and a corrupt DOCX — all three should show the skip notice, not an error crash.
 
 **Failure severity:** `minor` — the notice must appear; silent skip would be `major`
 
@@ -236,7 +257,8 @@ For a broader real-browser regression pass, use the expanded checklist in [MANUA
 ## Pass Criteria
 
 - S1 through S10 all pass (`blocker` and `major` items)
-- S11 and S12 pass or are accepted as known pilot caveats with documented evidence
+- S11a passes — PDF and DOCX text is extracted and sanitized (`major`)
+- S11b and S12 pass or are accepted as known pilot caveats with documented evidence
 - no raw text appears in logs, console output, or operator-visible diagnostics
 - no unexpected external network requests are observed for sanitization flows
 - no crash or unrecoverable error on any required pilot workflow

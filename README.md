@@ -161,7 +161,7 @@ What is currently manual:
 - release label: `v0.1.0-enterprise-pilot`
 - code/package version carried by artifacts: `0.1.0`
 - supported environment: desktop browser users on controlled enterprise-managed workstations
-- supported content type: pasted text, logs, and small textual files surfaced through paste/drop in ChatGPT Web composers
+- supported content type: pasted text, logs, small textual files, PDF files (text layer extracted), and DOCX files surfaced through paste/drop in ChatGPT Web composers; image files and non-extractable binaries are skipped with a visible notice
 - supported deployment shape: unpacked extension for pilot validation or signed extension zip for controlled distribution, plus local engine installed per-user or per-admin workflow
 - required product flows for pilot:
   - paste interception and local sanitization before submit
@@ -256,7 +256,7 @@ See [THREAT_MODEL.md](/home/administrator/tools/chatgpt-anonymizer/docs/product/
 ## Known Limitations
 
 - detection remains text-first and primarily regex/dictionary based
-- optional ML detector is still a placeholder hook
+- the ML detector (`ml:local-heuristic`) is a set of regex heuristic rules for PERSON names, USERNAMEs, and custom identifiers — not a neural network model; it runs on every sanitization request (`enableMl: true` is hardcoded); a user-facing toggle to enable/disable it is out of scope for this pilot
 - Playwright e2e validates fixture workflows, not a packaged extension loaded into the browser
 - local Playwright execution may require `PLAYWRIGHT_BROWSER=firefox` or a less restricted Linux environment when Chromium automation is blocked by the host sandbox
 - direct attachment rewriting inside ChatGPT remains out of scope; only prompt text and text extracted during paste/drop are protected automatically

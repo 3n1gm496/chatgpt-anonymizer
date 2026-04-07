@@ -2,6 +2,27 @@
 
 All notable changes to this repository are documented in this file.
 
+## [v0.1.0-enterprise-pilot] - 2026-04-07 (pilot hardening patch 2)
+
+No new API surface, no architecture changes. Three coverage gaps closed.
+
+### Added
+
+- **Typed-text debounce**: `registerInputDebouncer` in `pasteInterceptor.ts` sanitizes manually typed text on-the-fly with a 1500ms idle debounce. Previously, typed text was only sanitized at submit time. An `isSanitizing` reentrance flag prevents the synthetic `input` event fired by `replaceComposerText` from re-triggering the debouncer.
+- **PDF and DOCX text extraction on paste/drop**: `extractTextFromPdf` (pdfjs-dist, no-worker MV3-safe) and `extractTextFromDocx` (mammoth) are added to `richText.ts` as dynamic imports. Text extracted from pasted/dropped PDF or DOCX files is sanitized and written to the composer like any other text. Password-protected, scanned, or corrupt files fall through to `skippedFileCount` with a visible notice.
+- **Submit blocked when native ChatGPT uploads are present**: `deriveSubmitGuardVerdict` now returns `{ allowed: false, state: 'unsafe_attachments' }` when `sessionState.unsafeAttachmentsPresent` is true. Previously this session field was set but never checked at submit time.
+
+### Tests
+
+- 15 new tests: 6 for the typed-text debouncer, 7 for PDF/DOCX extraction (including password-protected PDF, corrupt DOCX, scanned PDF), 3 for the unsafe-attachments submit block
+- Total: 69 TS unit/integration tests pass; 28 Python unit/integration tests pass
+- Lint: ESLint, Prettier, Ruff all clean
+
+### Artifacts
+
+- Extension zip: `chatgpt-anonymizer-extension-0.1.0-chrome.zip` (461 KB, up from 198 KB — pdfjs-dist and mammoth loaded as lazy code-split chunks)
+- Engine wheel and sdist unchanged
+
 ## [v0.1.0-enterprise-pilot] - 2026-04-06 (pilot hardening patch)
 
 Pilot hardening pass. No new features, no architecture changes.

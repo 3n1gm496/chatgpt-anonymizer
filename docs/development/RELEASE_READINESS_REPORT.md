@@ -59,9 +59,19 @@ The pilot release label intentionally differs from package versions. The release
 - `ci-e2e.yml`
 - `release-readiness.yml`
 
-## Pilot Hardening — Applied After Initial Release
+## Pilot Hardening — Patch 2 (2026-04-07)
 
-These items were completed in the pilot hardening pass (2026-04-06):
+Three coverage gaps closed in commit 039e876:
+
+- **Typed-text on-the-fly sanitization**: `registerInputDebouncer` in `pasteInterceptor.ts` sanitizes manually typed text after 1500ms idle. An `isSanitizing` flag prevents reentrant sanitization from synthetic `input` events fired by `replaceComposerText`. IME guard also applied.
+- **PDF and DOCX text extraction on paste/drop**: `extractTextFromPdf` (pdfjs-dist legacy/no-worker, MV3-safe) and `extractTextFromDocx` (mammoth) added to `richText.ts` as dynamic imports. Text is extracted and sent through the existing sanitize pipeline. Password-protected, scanned, and corrupt files fall to `skippedFileCount` with a notice.
+- **Submit blocked when native uploads present**: `deriveSubmitGuardVerdict` now checks `sessionState.unsafeAttachmentsPresent` first, returning `{ allowed: false, state: 'unsafe_attachments' }` before any other check.
+- **Test count after patch 2**: **69 TS unit/integration + 28 Python = 97 total** (15 new tests).
+- **Extension zip size**: 461 KB (up from 198 KB — pdfjs-dist and mammoth loaded as lazy code-split chunks, not bundled in the main content script).
+
+## Pilot Hardening — Patch 1 (2026-04-06)
+
+These items were completed in the pilot hardening pass:
 
 - **Paste-First Robusta**: every text paste is intercepted, sanitized immediately, and written back. The native paste bypass that previously caused all paste events to skip sanitization has been removed.
 - **Write-back verification**: `replaceComposerText` return value is now checked; a read-back comparison verifies the DOM persisted the sanitized text. Silent failures now surface as visible errors instead of false "ready" states.
@@ -69,7 +79,7 @@ These items were completed in the pilot hardening pass (2026-04-06):
 - **Caret position after paste**: the caret is explicitly positioned at the end of the sanitized text after `replaceChildren`, replacing a detached selection.
 - **Composer DOM resilience**: loose selector strategies (no `<form>` context required) cover ChatGPT DOM variants where the form wrapper is removed or restructured. The `[data-testid="prompt-textarea"]` selector is included.
 - **Submit guard broadened click detection**: when `findSubmitButton()` returns null (DOM change), the guard falls back to `looksLikeSubmitButton` heuristics applied to the clicked element, preventing guard bypass during ChatGPT DOM updates.
-- **Test coverage**: 54 unit/integration tests pass. New tests added for IME guard, write-back mismatch, broadened click detection, and no-form composer variant. All 12 e2e tests pass.
+- **Test coverage after patch 1**: 54 unit/integration tests pass. All 12 e2e tests pass.
 
 ## Residual Risks
 
