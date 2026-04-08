@@ -2,6 +2,31 @@
 
 All notable changes to this repository are documented in this file.
 
+## [v0.1.0-enterprise-pilot] - 2026-04-08 (extended detectors + hardening pass 2)
+
+### Added
+
+- **IPv6 detector** (`extended_detector.py`): structural pattern matching validated via `ipaddress.IPv6Address`. Covers full 8-group and compressed (`::`) notation. Confidence 0.95; never triggers review.
+- **Date-of-birth detector** (`extended_detector.py`): ISO 8601, European numeric, and European long formats. Fires only when an explicit DOB keyword (`data di nascita`, `DOB`, `born on`, `nato il`, etc.) appears within 60 chars. Confidence 0.88.
+- **National identifier detector** (`extended_detector.py`): EU passport format (1–2 letters + 6–9 digits) and generic alphanumeric IDs in labeled context (passport, national ID, residence permit, driver's licence, SSN, NIN). Confidence 0.82.
+- **Address detector** (`extended_detector.py`): labeled-context (`indirizzo:`, `address:`, `road:`, `street:`) and inline street-type keywords (`Via`, `Viale`, `Corso`, `Piazza`, etc.). Confidence 0.72.
+- **Payment card Luhn check in submit guard** (`submitGuard.ts`): `containsValidPaymentCard` validates 13–19 digit card numbers with the Luhn algorithm before blocking submit. Prevents false positives on plain numeric sequences.
+
+### Fixed
+
+- **Integration test used deprecated `enableMl` field** (`test_api.py`): the `SanitizeOptions` field was renamed to `enableHeuristics` in a prior session; the integration test was left on the old name, causing a 422 on the `/sanitize` endpoint. Fixed.
+
+### Changed
+
+- **Pseudonymization terminology corrected** across all user-visible strings and product docs: "anonimizzato/anonymization" replaced with "pseudonimizzato/pseudonymization" in `pasteInterceptor.ts`, `submitGuard.ts`, `StatusPill.tsx`, `MappingSessionCard.tsx`, `ReviewDrawer.tsx`, `App.tsx`, `README.md`, `SECURITY.md`, `PRD.md`, `UX_FLOWS.md`, `PILOT_SMOKE_TESTS.md`.
+
+### Tests
+
+- 30 new Python unit tests for all 4 extended detectors (IPv6, DOB, NationalId, Address)
+- 4 new TS unit tests: payment card Luhn guard (valid Visa blocked, space-separated blocked, invalid Luhn allowed, below-minimum length allowed)
+- Total: 92 Python unit/integration tests pass; 76 TS unit/integration tests pass
+- Lint: ESLint, Prettier, Ruff all clean
+
 ## [v0.1.0-enterprise-pilot] - 2026-04-08 (security & detector hardening)
 
 ### Fixed

@@ -27,7 +27,7 @@ const HEADLINES: Record<StatusMode, string> = {
 };
 
 const DEFAULT_MESSAGES: Record<StatusMode, string> = {
-  idle: 'Puoi scrivere normalmente oppure incollare testo da anonimizzare.',
+  idle: 'Puoi scrivere normalmente oppure incollare testo da pseudonimizzare.',
   processing:
     'Sto elaborando il contenuto in locale, senza inviarlo a servizi esterni.',
   ready: 'Il prompt è stato aggiornato e resta modificabile.',

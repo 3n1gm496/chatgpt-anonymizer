@@ -28,7 +28,7 @@ async def test_health_sanitize_revert_and_reset_roundtrip(tmp_path):
                 "text": "Email user@example.com on api.internal.example.com",
                 "detectedContentType": "paste",
                 "exclusions": [],
-                "options": {"enableMl": False},
+                "options": {"enableHeuristics": False},
             },
         )
         assert sanitize.status_code == 200

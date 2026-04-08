@@ -55,7 +55,7 @@ For a broader real-browser regression pass, use the expanded checklist in [MANUA
 
 - the pasted text is NEVER visible in the composer in its original form — placeholders appear immediately at paste time, before any submit action
 - composer shows something like: `Contatta [EMAIL_001] dal nodo [IP_001] per [PERSON_001].`
-- status pill shows local anonymization success
+- status pill shows local pseudonymization success
 
 **Failure severity:** `blocker` — if original text appears even briefly before sanitization, or if sanitization only happens at submit, this is a regression on the paste-first strategy
 
@@ -132,7 +132,7 @@ For a broader real-browser regression pass, use the expanded checklist in [MANUA
 
 **Steps:**
 
-1. Paste a prompt containing an ambiguous name that the engine detects but does not fully anonymize:  
+1. Paste a prompt containing an ambiguous name that the engine detects but does not fully pseudonymize:  
    `Parla con Jordan a Milano per la questione Apple.`
 2. Check if a review drawer or notification appears.
 3. If a review UI appears, make a decision (include or exclude one replacement) and apply.
@@ -187,7 +187,7 @@ For a broader real-browser regression pass, use the expanded checklist in [MANUA
 
 **Steps:**
 
-1. Type (do not paste) a harmless prompt that was never through anonymization: `Ciao, come posso aiutarti oggi?`
+1. Type (do not paste) a harmless prompt that was never through pseudonymization: `Ciao, come posso aiutarti oggi?`
 2. Stop the local engine.
 3. Click Send.
 

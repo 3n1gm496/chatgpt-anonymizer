@@ -44,4 +44,13 @@ def canonicalize_value(entity_type: EntityType, value: str) -> str:
     if entity_type == EntityType.SECRET:
         # Secrets are case-sensitive; no normalisation
         return value
+    if entity_type == EntityType.IPV6:
+        # Lowercase hex for consistent deduplication
+        return value.lower()
+    if entity_type == EntityType.NATIONAL_ID:
+        # Uppercase for consistent deduplication
+        return value.upper()
+    if entity_type in {EntityType.DATE_OF_BIRTH, EntityType.ADDRESS}:
+        # Collapse whitespace for consistent key
+        return _WHITESPACE_RE.sub(" ", value.strip())
     return value

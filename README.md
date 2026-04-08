@@ -1,6 +1,6 @@
 # ChatGPT Anonymizer
 
-`chatgpt-anonymizer` is an extension-first local anonymization product for ChatGPT Web. The browser extension intercepts pasted text before submit, sends it only to a service bound on `127.0.0.1`, replaces sensitive values inline with deterministic placeholders, stores the reversible mapping locally in encrypted form, and can optionally rehydrate known placeholders in rendered responses on the same device.
+`chatgpt-anonymizer` is an extension-first local pseudonymization product for ChatGPT Web. The browser extension intercepts pasted text before submit, sends it only to a service bound on `127.0.0.1`, replaces sensitive values inline with deterministic placeholders, stores the reversible mapping locally in encrypted form, and can optionally rehydrate known placeholders in rendered responses on the same device.
 
 ## Why This Is Different From The Old Batch Tool
 

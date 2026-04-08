@@ -6,7 +6,7 @@ Users want to work inside ChatGPT Web with logs, tickets, snippets, and internal
 
 ## Product Goal
 
-Provide a desktop-browser workflow that anonymizes sensitive text locally before any content is submitted to ChatGPT Web.
+Provide a desktop-browser workflow that pseudonymizes sensitive text locally before any content is submitted to ChatGPT Web.
 
 ## Primary User
 

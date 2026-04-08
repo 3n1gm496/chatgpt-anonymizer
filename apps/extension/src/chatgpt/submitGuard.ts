@@ -76,8 +76,7 @@ function isValidPartitaIva(digits: string): boolean {
 // IBAN pattern — MOD-97 validation is complex in TS; we use structural pattern
 // + length as a strong-enough heuristic for the submit guard (not false-positive-safe
 // enough for replacement, but safe enough to trigger re-sanitisation).
-const IBAN_PATTERN =
-  /\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4,30}\b/gi;
+const IBAN_PATTERN = /\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4,30}\b/gi;
 
 // Secrets: vendor-prefixed tokens that are structurally unambiguous
 const SECRETS_PATTERN =
@@ -86,6 +85,34 @@ const SECRETS_PATTERN =
 // Connection strings in the text are also sensitive
 const CONNSTR_PATTERN =
   /\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|mssql):\/\/[^\s]{8,}/i;
+
+// Payment card: 13-19 digits, optionally space/dash separated, with Luhn check
+const PAYMENT_CARD_RAW_PATTERN = /\b(?:\d[ -]?){13,19}\b/g;
+
+function isValidLuhn(digits: string): boolean {
+  let total = 0;
+  let isOdd = true;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let d = parseInt(digits[i], 10);
+    if (!isOdd) {
+      d *= 2;
+      if (d > 9) d -= 9;
+    }
+    total += d;
+    isOdd = !isOdd;
+  }
+  return total % 10 === 0;
+}
+
+function containsValidPaymentCard(text: string): boolean {
+  for (const match of text.matchAll(PAYMENT_CARD_RAW_PATTERN)) {
+    const digits = match[0].replace(/[ -]/g, '');
+    if (digits.length >= 13 && digits.length <= 19 && isValidLuhn(digits)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 const IPV4_PATTERN = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
 const PLACEHOLDER_PATTERN = /\[[A-Z_0-9]+\]/g;
@@ -178,7 +205,8 @@ function textLooksSensitive(text: string): boolean {
     containsValidPartitaIva(candidate) ||
     SECRETS_PATTERN.test(candidate) ||
     CONNSTR_PATTERN.test(candidate) ||
-    IBAN_PATTERN.test(candidate)
+    IBAN_PATTERN.test(candidate) ||
+    containsValidPaymentCard(candidate)
   ) {
     return true;
   }
@@ -280,7 +308,7 @@ export function deriveSubmitGuardVerdict(
         allowed: true,
         state: 'sanitized_current',
         reason:
-          'Le parti già anonimizzate sono ancora integre e le differenze residue sono minime.',
+          'Le parti già pseudonimizzate sono ancora integre e le differenze residue sono minime.',
         currentFingerprint,
         expectedFingerprint: sessionState.sanitizedFingerprint,
         changeRatio,
@@ -298,7 +326,7 @@ export function deriveSubmitGuardVerdict(
       allowed: true,
       state: 'sanitized_current',
       reason:
-        'Sono state rilevate solo differenze minime rispetto all ultima anonimizzazione valida.',
+        'Sono state rilevate solo differenze minime rispetto all ultima pseudonimizzazione valida.',
       currentFingerprint,
       expectedFingerprint: sessionState.sanitizedFingerprint,
       changeRatio,
@@ -321,7 +349,7 @@ export function deriveSubmitGuardVerdict(
     allowed: false,
     state: 'stale_after_edit',
     reason:
-      'Hai cambiato il prompt dopo l ultima anonimizzazione. Lo ricontrollo automaticamente prima dell invio.',
+      'Hai cambiato il prompt dopo l ultima pseudonimizzazione. Lo ricontrollo automaticamente prima dell invio.',
     currentFingerprint,
     expectedFingerprint: sessionState.sanitizedFingerprint,
     changeRatio,

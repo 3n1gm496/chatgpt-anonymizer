@@ -2,7 +2,7 @@
 
 ## Scope
 
-This repository is designed for local-only anonymization of pasted ChatGPT Web content. Sensitive text must never leave the user device except through the user's normal ChatGPT interaction after anonymization has already happened.
+This repository is designed for local-only pseudonymization of pasted ChatGPT Web content. Sensitive text must never leave the user device except through the user's normal ChatGPT interaction after pseudonymization has already happened.
 
 ## Supported Security Posture
 
@@ -19,7 +19,8 @@ The maintained security baseline assumes:
 - strict localhost-only engine binding enforced in code
 - no remote sanitization services, telemetry, or analytics
 - encrypted session persistence with installation secret, derived session secret, and record-scoped DEK
-- submit guard blocks unsanitized or stale content; PARTITA_IVA detection uses checksum validation to prevent false positives on ticket numbers and phone numbers
+- submit guard blocks unsanitized or stale content; PARTITA_IVA detection uses checksum validation to prevent false positives on ticket numbers and phone numbers; payment card detection now uses Luhn validation in the submit guard as well as the engine
+- extended detectors cover IPv6 addresses, dates of birth (labeled context), national identifiers (passport, residence permit), and street addresses (labeled context) — all with explicit keyword requirements to control false positives
 - local response rehydration only mutates the current DOM
 - shared contracts in `packages/contracts` reduce schema drift between extension and engine
 - CI covers engine unit/integration, extension unit/integration, and fixture-based e2e

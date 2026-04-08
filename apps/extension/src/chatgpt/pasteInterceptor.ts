@@ -131,7 +131,7 @@ export async function sanitizeInterceptedText(
     const written = deps.adapter.replaceComposerText(fullComposerText);
     if (!written) {
       throw new Error(
-        'Il campo di testo non è stato trovato: il testo anonimizzato non è stato scritto nel composer. Ricarica la pagina e riprova.',
+        'Il campo di testo non è stato trovato: il testo pseudonimizzato non è stato scritto nel composer. Ricarica la pagina e riprova.',
       );
     }
     // Verify the write actually persisted synchronously.
@@ -144,7 +144,7 @@ export async function sanitizeInterceptedText(
       .trim();
     if (actualNorm !== expectedNorm) {
       throw new Error(
-        'Il testo nel composer non corrisponde a quello anonimizzato: la pagina ha sovrascritto il campo durante la scrittura. Ricarica e riprova.',
+        'Il testo nel composer non corrisponde a quello pseudonimizzato: la pagina ha sovrascritto il campo durante la scrittura. Ricarica e riprova.',
       );
     }
     return {
@@ -224,7 +224,7 @@ export async function sanitizeComposerText(
     const written = deps.adapter.replaceComposerText(response.sanitizedText);
     if (!written) {
       throw new Error(
-        'Il campo di testo non è stato trovato: il testo anonimizzato non è stato scritto nel composer. Ricarica la pagina e riprova.',
+        'Il campo di testo non è stato trovato: il testo pseudonimizzato non è stato scritto nel composer. Ricarica la pagina e riprova.',
       );
     }
     // Verify the write actually persisted synchronously.
@@ -237,7 +237,7 @@ export async function sanitizeComposerText(
       .trim();
     if (actualNormManual !== expectedNormManual) {
       throw new Error(
-        'Il testo nel composer non corrisponde a quello anonimizzato: la pagina ha sovrascritto il campo durante la scrittura. Ricarica e riprova.',
+        'Il testo nel composer non corrisponde a quello pseudonimizzato: la pagina ha sovrascritto il campo durante la scrittura. Ricarica e riprova.',
       );
     }
     return {

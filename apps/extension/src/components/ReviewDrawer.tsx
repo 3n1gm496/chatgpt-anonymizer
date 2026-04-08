@@ -58,7 +58,7 @@ export function ReviewDrawer({
                 }
                 onClick={() => onDecisionChange(finding.id, 'accept')}
               >
-                Mantieni anonimo
+                Mantieni pseudonimo
               </button>
               <button
                 type="button"

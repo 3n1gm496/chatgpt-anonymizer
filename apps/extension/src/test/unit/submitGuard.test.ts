@@ -764,3 +764,51 @@ describe('PARTITA_IVA checksum guard (regression: no false positives on plain 11
     });
   });
 });
+
+describe('payment card Luhn guard', () => {
+  // Visa test number 4111111111111111 passes Luhn
+  it('blocks text containing a valid Luhn payment card number', async () => {
+    await expect(
+      evaluateSubmitGuard('Card: 4111111111111111', null, {
+        healthCheck: vi.fn().mockResolvedValue(true),
+      }),
+    ).resolves.toMatchObject({
+      allowed: false,
+      state: 'never_sanitized',
+    });
+  });
+
+  it('blocks a space-separated card number that passes Luhn', async () => {
+    await expect(
+      evaluateSubmitGuard('Carta: 4111 1111 1111 1111', null, {
+        healthCheck: vi.fn().mockResolvedValue(true),
+      }),
+    ).resolves.toMatchObject({
+      allowed: false,
+      state: 'never_sanitized',
+    });
+  });
+
+  it('does not block a 16-digit number that fails Luhn', async () => {
+    // 4111111111111112 — last digit wrong, Luhn fails
+    await expect(
+      evaluateSubmitGuard('Numero 4111111111111112', null, {
+        healthCheck: vi.fn().mockResolvedValue(true),
+      }),
+    ).resolves.toMatchObject({
+      allowed: true,
+      state: 'manual_current',
+    });
+  });
+
+  it('does not block a 12-digit number (below minimum card length)', async () => {
+    await expect(
+      evaluateSubmitGuard('Codice 411111111111', null, {
+        healthCheck: vi.fn().mockResolvedValue(true),
+      }),
+    ).resolves.toMatchObject({
+      allowed: true,
+      state: 'manual_current',
+    });
+  });
+});

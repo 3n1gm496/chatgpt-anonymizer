@@ -38,6 +38,7 @@ class RawFinding:
             "regex:partita-iva",
             "financial:iban",
             "financial:payment-card",
+            "extended:ipv6",
             "secrets:aws-access-key-id",
             "secrets:github-pat-fine-grained",
             "secrets:github-pat-classic",
@@ -59,6 +60,7 @@ class RawFinding:
             "heuristic:username-labeled",
             "heuristic:person-intro",
             "heuristic:person-salutation",
+            "extended:ipv6",
         }
         return (
             self.detector.startswith("dictionary")
@@ -71,7 +73,16 @@ class RawFinding:
                 )
             )
             or (self.entity_type is EntityType.HOSTNAME and self.confidence < 0.8)
-            or (self.entity_type is EntityType.ADDRESS and self.confidence < 0.75)
+            # Extended detectors use labeled-context so are lower confidence by design;
+            # flag for review if confidence is borderline.
+            or (
+                self.entity_type in {
+                    EntityType.ADDRESS,
+                    EntityType.DATE_OF_BIRTH,
+                    EntityType.NATIONAL_ID,
+                }
+                and self.confidence < 0.75
+            )
             or self.confidence < 0.55
         )
 

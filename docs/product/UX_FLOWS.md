@@ -6,13 +6,13 @@
 2. Extension prevents the native paste from committing raw text.
 3. A local-only processing state appears near the composer.
 4. Sanitized text replaces the composer contents.
-5. A status pill confirms local anonymization and replacement count.
+5. A status pill confirms local pseudonymization and replacement count.
 
 ## Engine Down Submit Block
 
 1. User tries to submit without a reachable local engine.
 2. Extension blocks the submit action.
-3. An inline message explains that local anonymization is mandatory in MVP.
+3. An inline message explains that local pseudonymization is mandatory in MVP.
 4. The user can retry after the engine becomes healthy.
 
 ## Low-Confidence Review

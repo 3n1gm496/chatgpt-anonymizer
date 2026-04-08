@@ -149,7 +149,7 @@ function PopupApp(): React.JSX.Element {
           Anche quando il testo viene digitato a mano, l estensione prova a
           proteggerlo automaticamente prima dell invio. Se carichi file o
           allegati direttamente in ChatGPT, il loro contenuto non viene ancora
-          anonimizzato automaticamente.
+          pseudonimizzato automaticamente.
         </p>
       </section>
     </main>

@@ -120,7 +120,7 @@ export function MappingSessionCard({
           <span style={{ color: '#36565b' }}>
             Testo incollato o trascinato nel prompt: sì. File testuali piccoli
             letti via paste/drop: sì. Allegati caricati direttamente in ChatGPT:
-            non ancora anonimizzati automaticamente.
+            non ancora pseudonimizzati automaticamente.
           </span>
         </div>
         <div>

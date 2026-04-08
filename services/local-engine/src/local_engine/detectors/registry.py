@@ -20,6 +20,12 @@ from __future__ import annotations
 
 from local_engine.core.policies import EngineSettings
 from local_engine.detectors.dictionary_detector import DictionaryDetector
+from local_engine.detectors.extended_detector import (
+    AddressDetector,
+    DateOfBirthDetector,
+    IPv6Detector,
+    NationalIdDetector,
+)
 from local_engine.detectors.financial_detector import IbanDetector, PaymentCardDetector
 from local_engine.detectors.heuristic_detector import ContextualHeuristicDetector
 from local_engine.detectors.regex_detector import build_default_regex_detectors
@@ -108,6 +114,10 @@ def build_detectors(settings: EngineSettings, enable_heuristics: bool = False) -
         IbanDetector(),
         PaymentCardDetector(),
         SecretsDetector(),
+        IPv6Detector(),
+        DateOfBirthDetector(),
+        NationalIdDetector(),
+        AddressDetector(),
         DictionaryDetector(settings.dictionary_terms),
     ]
     # Heuristic detector runs after structural detectors so that labeled names
