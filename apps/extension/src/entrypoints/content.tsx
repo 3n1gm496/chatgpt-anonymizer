@@ -589,7 +589,7 @@ export default defineContentScript({
     const composer = adapter.findComposer();
     if (composer && !adapter.getComposerText()) {
       statusMode = 'idle';
-      statusMessage = `Pronto per anonimizzare il prossimo incolla in ${runtimeContext.conversationId}`;
+      statusMessage = `Pronto per pseudonimizzare il prossimo incolla in ${runtimeContext.conversationId}`;
       statusVisible = false;
       render();
     }

@@ -16,6 +16,7 @@ from local_engine.models.api_models import (
     ResetSessionResponseModel,
     RevertRequestModel,
     RevertResponseModel,
+    RotateKeyResponseModel,
     SanitizeRequestModel,
     SanitizeResponseModel,
     SessionSummaryModel,
@@ -41,7 +42,7 @@ def _confidence_level(score: float) -> str:
     return ConfidenceLevel.LOW.value
 
 
-class LocalAnonymizationService:
+class LocalPseudonymisationService:
     def __init__(
         self,
         settings: EngineSettings,
@@ -67,7 +68,7 @@ class LocalAnonymizationService:
             status="ok",
             engineVersion=__version__,
             bind="127.0.0.1",
-            mlEnabled=self.settings.ml_enabled,
+            heuristicsEnabled=self.settings.heuristics_enabled,
             detectors=registered_detector_names(self.settings),
             storage=StorageInfoModel(
                 encrypted=True,
@@ -89,7 +90,7 @@ class LocalAnonymizationService:
         findings = detect_text(
             normalized_text,
             settings=self.settings,
-            enable_ml=payload.options.enableMl,
+            enable_heuristics=payload.options.enableHeuristics,
         )
         replacements = build_replacement_plan(
             findings=findings,
@@ -187,3 +188,41 @@ class LocalAnonymizationService:
             conversationId=conversation_id,
             clearedMappings=cleared,
         )
+
+    def rotate_installation_key(self) -> RotateKeyResponseModel:
+        """
+        Rotate the installation secret.
+
+        All existing sessions are re-encrypted under the new secret.
+        This is an administrative operation: once complete, any backup
+        that contains the old installation.secret can no longer decrypt
+        the new session blobs.
+
+        Guarantees:
+        - All live sessions are loaded into memory before rotation begins.
+        - The new secret is written atomically.
+        - All sessions are re-saved under the new secret.
+        - If re-save fails partway, the sessions that failed will be lost
+          but no sensitive data is exposed (they were already in memory).
+        """
+        live_sessions = self.sessions.store.load_all()
+        self.sessions.store.rotate_installation_secret()
+        re_saved = 0
+        for session in live_sessions:
+            try:
+                self.sessions.store.save(session)
+                re_saved += 1
+            except Exception:  # noqa: BLE001 — best-effort re-save
+                pass
+        return RotateKeyResponseModel(
+            rotated=True,
+            sessionsReencrypted=re_saved,
+            message=(
+                f"Installation secret rotated. "
+                f"{re_saved}/{len(live_sessions)} sessions re-encrypted."
+            ),
+        )
+
+
+# Backwards-compatibility alias — prefer LocalPseudonymisationService in new code.
+LocalAnonymizationService = LocalPseudonymisationService

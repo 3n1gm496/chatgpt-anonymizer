@@ -84,3 +84,22 @@ class EncryptedSessionStore:
             if session is not None:
                 sessions.append(session)
         return sessions
+
+    def rotate_installation_secret(self) -> None:
+        """
+        Replace the installation secret with a freshly generated one.
+
+        The old secret is overwritten atomically.  After this call, any
+        on-disk session blobs that were encrypted with the old secret are
+        unreadable until re-saved under the new secret.  Callers should
+        load all sessions into memory before invoking this method and
+        re-save them immediately after.
+
+        Key rotation mitigates disk/backup compromise: an attacker who
+        captures a backup after rotation cannot decrypt blobs written
+        after the rotation even if they hold the pre-rotation secret.
+        """
+        new_secret = secrets.token_bytes(len(self.installation_secret))
+        _atomic_write_bytes(self.paths.secret_file, new_secret)
+        self.installation_secret = new_secret
+        logger.info("installation_secret_rotated")

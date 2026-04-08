@@ -2,6 +2,33 @@
 
 All notable changes to this repository are documented in this file.
 
+## [v0.1.0-enterprise-pilot] - 2026-04-08 (security & detector hardening)
+
+### Fixed
+
+- **Critical: async paste/drop race** (`pasteInterceptor.ts`): `event.preventDefault()` was called after the first `await`, which let the browser deliver the raw clipboard text to the editor before sanitization completed. Fixed by moving `preventDefault()` to the synchronous portion of both `handlePaste` and `handleDrop`.
+- **PARTITA_IVA false positives in submit guard** (`submitGuard.ts`): the bare `/\b\d{11}\b/` pattern flagged every 11-digit number (ticket IDs, phone numbers, order references) as a potential Partita IVA. The pattern now validates the Luhn-style modulo checksum before blocking.
+- **IBAN spaced-form detection** (`financial_detector.py`): the regex pattern placed the optional space *after* each 4-char group, which prevented matching IBANs in the standard printed presentation (space between check digits and first data group, e.g. `GB82 WEST 1234 5698 7654 32`). Pattern rewritten to allow the space *before* each group.
+
+### Added
+
+- **IBAN detector** (`financial_detector.py`): detects IBAN codes with full MOD-97 checksum validation (ISO 13616). Country-specific length table for 60+ countries. Entity type: `IBAN`.
+- **Payment card detector** (`financial_detector.py`): detects payment card numbers (PAN) using the Luhn algorithm plus BIN-prefix filtering to suppress false positives. Entity type: `PAYMENT_CARD`.
+- **Secrets detector** (`secrets_detector.py`): detects developer secrets — AWS access keys, GitHub/GitLab PATs, Stripe keys, npm tokens, Google API keys, JWTs, PEM private keys, Bearer tokens, database connection strings, `.env`-style secrets, and labeled hex values. Entity type: `SECRET`.
+- **Engine request authentication** (`main.py`): bearer-token middleware protects all `/sanitize`, `/revert`, and `/rotate-key` endpoints. Token is generated once at startup and surfaced through a health response so the extension can acquire it programmatically.
+- **`enableHeuristics` / `heuristicsEnabled` API fields**: replaces the misleading `enableMl` / `mlEnabled` naming. Legacy names still accepted on inbound requests for backwards compatibility. Env var `LOCAL_ENGINE_ENABLE_HEURISTICS` preferred; `LOCAL_ENGINE_ENABLE_ML` still accepted.
+
+### Changed
+
+- **`OptionalMlDetector` → `ContextualHeuristicDetector`** (`heuristic_detector.py`): the class and its rule prefix were renamed to accurately reflect that no ML inference is performed. `ml_detector.py` is retained as a backwards-compatibility shim exporting both names.
+- **`LocalAnonymizationService` → `LocalPseudonymizationService`** (`service.py`): class renamed to use correct privacy terminology. `LocalAnonymizationService` re-exported as alias.
+
+### Tests
+
+- 21 new Python unit tests: IBAN (MOD-97), payment card (Luhn + BIN), secrets (12 detector names), `ContextualHeuristicDetector` canonical name + shim, heuristics env-var backwards compat
+- 3 new TS unit tests: PARTITA_IVA checksum regression suite (valid blocked, invalid allowed, short ticket allowed)
+- Total: 72 TS unit/integration tests pass; 64 Python unit tests pass
+
 ## [v0.1.0-enterprise-pilot] - 2026-04-07 (pilot hardening patch 2)
 
 No new API surface, no architecture changes. Three coverage gaps closed.

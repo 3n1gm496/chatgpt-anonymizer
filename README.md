@@ -185,7 +185,7 @@ What is currently manual:
 - packaged-extension loading in automated e2e as a release gate
 - enterprise-wide forced rollout tooling beyond documented signing and distribution steps
 - structure-aware rehydration for every rich-response widget type
-- optional ML detector enablement
+- optional contextual heuristic detector UI toggle (enabled via env var only)
 
 ## Extension Signing And Distribution Checklist
 
@@ -256,7 +256,7 @@ See [THREAT_MODEL.md](/home/administrator/tools/chatgpt-anonymizer/docs/product/
 ## Known Limitations
 
 - detection remains text-first and primarily regex/dictionary based
-- the ML detector (`ml:local-heuristic`) is a set of regex heuristic rules for PERSON names, USERNAMEs, and custom identifiers — not a neural network model; it runs on every sanitization request (`enableMl: true` is hardcoded); a user-facing toggle to enable/disable it is out of scope for this pilot
+- the contextual heuristic detector (`ContextualHeuristicDetector`) is a set of labeled-context regex rules for PERSON names, USERNAMEs, and custom identifiers — not a neural network model; it is disabled by default and enabled with `LOCAL_ENGINE_ENABLE_HEURISTICS=true`; a user-facing toggle is out of scope for this pilot
 - Playwright e2e validates fixture workflows, not a packaged extension loaded into the browser
 - local Playwright execution may require `PLAYWRIGHT_BROWSER=firefox` or a less restricted Linux environment when Chromium automation is blocked by the host sandbox
 - direct attachment rewriting inside ChatGPT remains out of scope; only prompt text and text extracted during paste/drop are protected automatically

@@ -1,3 +1,10 @@
+"""
+API models for the local pseudonymisation engine.
+
+All public field names are camelCase for JSON serialisation consistency.
+Obsolete ``ml``-prefixed fields are replaced with ``heuristics``-prefixed
+equivalents to be technically accurate about the detection mechanism.
+"""
 from __future__ import annotations
 
 from datetime import datetime
@@ -22,15 +29,20 @@ class StorageInfoModel(StrictModel):
 class HealthResponseModel(ProtocolModel):
     status: Literal["ok", "degraded"]
     engineVersion: str
+    protocolVersion: Literal["v1"] = "v1"
     bind: Literal["127.0.0.1"]
-    mlEnabled: bool
+    # heuristicsEnabled replaces the previous mlEnabled (which was inaccurate:
+    # contextual heuristic rules are regex-based, not machine learning).
+    heuristicsEnabled: bool
     detectors: list[str]
     storage: StorageInfoModel
     uptimeSeconds: float
 
 
 class SanitizeOptionsModel(StrictModel):
-    enableMl: bool = False
+    # Renamed from enableMl to enableHeuristics — contextual heuristic rules,
+    # not ML.  The old name is accepted for one release cycle for compatibility.
+    enableHeuristics: bool = True
     sessionTtlMinutes: int | None = Field(default=None, ge=1, le=1440)
 
 
@@ -135,3 +147,32 @@ class ResetSessionResponseModel(ProtocolModel):
     sessionId: str | None
     conversationId: str | None
     clearedMappings: int = Field(ge=0)
+
+
+# ---------------------------------------------------------------------------
+# Engine auth token — used by extension to prove it is a trusted caller
+# ---------------------------------------------------------------------------
+
+class EngineTokenResponseModel(StrictModel):
+    """
+    Response from the /engine-token endpoint.
+
+    The token is a per-startup random secret that the extension must include
+    as the ``X-Cga-Token`` header on all mutation endpoints.  It provides
+    anti-confused-deputy protection: any other local process can connect to
+    127.0.0.1, but without the token its requests will be rejected.
+    """
+
+    token: str
+
+
+# ---------------------------------------------------------------------------
+# Key rotation
+# ---------------------------------------------------------------------------
+
+class RotateKeyResponseModel(StrictModel):
+    """Response from the /admin/rotate-key endpoint."""
+
+    rotated: bool
+    sessionsReencrypted: int
+    message: str

@@ -24,8 +24,24 @@ def stable_fingerprint(text: str) -> str:
 
 
 def canonicalize_value(entity_type: EntityType, value: str) -> str:
+    """
+    Produce a canonical form of ``value`` for the given entity type.
+
+    Canonical values are used as de-duplication keys within a session so that
+    the same logical entity (e.g. an email address written in different cases)
+    always maps to the same placeholder.
+    """
     if entity_type in {EntityType.EMAIL, EntityType.HOSTNAME, EntityType.URL, EntityType.USERNAME}:
         return value.lower()
     if entity_type == EntityType.PHONE:
         return _PHONE_DIGITS_RE.sub("", value)
+    if entity_type == EntityType.IBAN:
+        # Normalise spaces and force uppercase for consistent key
+        return value.replace(" ", "").upper()
+    if entity_type == EntityType.PAYMENT_CARD:
+        # Strip formatting separators; the caller should pass digits-only
+        return _PHONE_DIGITS_RE.sub("", value)
+    if entity_type == EntityType.SECRET:
+        # Secrets are case-sensitive; no normalisation
+        return value
     return value

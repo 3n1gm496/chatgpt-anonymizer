@@ -30,12 +30,35 @@ class RawFinding:
 
     @property
     def review_recommended(self) -> bool:
-        explicit_safe_detectors = {
+        # High-confidence structural detectors (checksum-validated) never need review
+        _always_trusted_detectors = {
+            "regex:email",
+            "regex:ipv4",
+            "regex:codice-fiscale",
+            "regex:partita-iva",
+            "financial:iban",
+            "financial:payment-card",
+            "secrets:aws-access-key-id",
+            "secrets:github-pat-fine-grained",
+            "secrets:github-pat-classic",
+            "secrets:gitlab-pat",
+            "secrets:stripe-secret-live",
+            "secrets:npm-auth-token",
+            "secrets:google-api-key",
+            "secrets:pem-private-key",
+            "secrets:slack-bot-token",
+            "secrets:sendgrid-api-key",
+        }
+        if self.detector in _always_trusted_detectors:
+            return False
+
+        # Contextual heuristic detectors that have been validated as low-FP
+        _safe_heuristic_detectors = {
             "regex:username-handle",
             "regex:labeled-person",
-            "ml:username-labeled",
-            "ml:person-intro",
-            "ml:person-salutation",
+            "heuristic:username-labeled",
+            "heuristic:person-intro",
+            "heuristic:person-salutation",
         }
         return (
             self.detector.startswith("dictionary")
@@ -43,11 +66,12 @@ class RawFinding:
             or (
                 self.entity_type in {EntityType.PERSON, EntityType.USERNAME}
                 and (
-                    self.detector not in explicit_safe_detectors
+                    self.detector not in _safe_heuristic_detectors
                     or self.confidence < 0.72
                 )
             )
             or (self.entity_type is EntityType.HOSTNAME and self.confidence < 0.8)
+            or (self.entity_type is EntityType.ADDRESS and self.confidence < 0.75)
             or self.confidence < 0.55
         )
 

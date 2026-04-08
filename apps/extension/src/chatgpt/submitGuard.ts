@@ -51,7 +51,42 @@ const PHONE_CONTEXT_PATTERN =
   /\b(?:tel|telefono|mobile|cell(?:ulare)?|contatto|whatsapp|phone|call|sms|fax)\b/i;
 const CODICE_FISCALE_PATTERN =
   /\b[A-Z]{6}[0-9]{2}[A-EHLMPRST][0-9]{2}[A-Z][0-9]{3}[A-Z]\b/i;
-const PARTITA_IVA_PATTERN = /\b\d{11}\b/;
+
+// PARTITA_IVA_PATTERN: requires the Luhn-like modulo-10 checksum to match.
+// The previous bare /\b\d{11}\b/ caused false positives on ticket numbers,
+// phone numbers, and other 11-digit values.  We replicate the Python
+// _validate_partita_iva() logic here to keep the heuristics consistent.
+const PARTITA_IVA_RAW_PATTERN = /\b(\d{11})\b/g;
+
+function isValidPartitaIva(digits: string): boolean {
+  if (digits.length !== 11) return false;
+  let total = 0;
+  for (let i = 0; i < 10; i++) {
+    const d = parseInt(digits[i], 10);
+    if (i % 2 === 0) {
+      total += d;
+    } else {
+      const doubled = d * 2;
+      total += doubled < 10 ? doubled : doubled - 9;
+    }
+  }
+  return (10 - (total % 10)) % 10 === parseInt(digits[10], 10);
+}
+
+// IBAN pattern — MOD-97 validation is complex in TS; we use structural pattern
+// + length as a strong-enough heuristic for the submit guard (not false-positive-safe
+// enough for replacement, but safe enough to trigger re-sanitisation).
+const IBAN_PATTERN =
+  /\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4,30}\b/gi;
+
+// Secrets: vendor-prefixed tokens that are structurally unambiguous
+const SECRETS_PATTERN =
+  /\b(?:AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|ghs_[A-Za-z0-9]{36}|gho_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82}|glpat-[A-Za-z0-9_-]{20}|sk_live_[A-Za-z0-9]{24}|npm_[A-Za-z0-9]{36}|AIza[0-9A-Za-z_-]{35})\b/;
+
+// Connection strings in the text are also sensitive
+const CONNSTR_PATTERN =
+  /\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|mssql):\/\/[^\s]{8,}/i;
+
 const IPV4_PATTERN = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
 const PLACEHOLDER_PATTERN = /\[[A-Z_0-9]+\]/g;
 
@@ -120,6 +155,14 @@ function containsFormattedPhoneCandidate(value: string): boolean {
   });
 }
 
+function containsValidPartitaIva(text: string): boolean {
+  for (const match of text.matchAll(PARTITA_IVA_RAW_PATTERN)) {
+    const digits = match[1];
+    if (digits !== undefined && isValidPartitaIva(digits)) return true;
+  }
+  return false;
+}
+
 function textLooksSensitive(text: string): boolean {
   const candidate = text.replace(PLACEHOLDER_PATTERN, ' ');
   if (!candidate.trim()) {
@@ -132,7 +175,10 @@ function textLooksSensitive(text: string): boolean {
     HOSTNAME_PATTERN.test(candidate) ||
     containsFormattedPhoneCandidate(candidate) ||
     CODICE_FISCALE_PATTERN.test(candidate) ||
-    PARTITA_IVA_PATTERN.test(candidate)
+    containsValidPartitaIva(candidate) ||
+    SECRETS_PATTERN.test(candidate) ||
+    CONNSTR_PATTERN.test(candidate) ||
+    IBAN_PATTERN.test(candidate)
   ) {
     return true;
   }

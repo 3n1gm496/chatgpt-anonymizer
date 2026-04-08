@@ -720,3 +720,47 @@ describe('submit guard state machine', () => {
     stop();
   });
 });
+
+describe('PARTITA_IVA checksum guard (regression: no false positives on plain 11-digit numbers)', () => {
+  // The old bare /\b\d{11}\b/ pattern flagged every 11-digit number as
+  // a potential Partita IVA.  The fix requires the Luhn-style checksum to
+  // pass before blocking submit.
+
+  it('blocks text containing a structurally valid Partita IVA', async () => {
+    // 01234567890 — manually-verified checksum passes
+    // Checksum: odds(0): 0+2+4+6+8 = 20; evens(1): 1*2=2, 3*2=6, 5*2=10->1, 7*2=14->5, 9*2=18->9; sum=2+6+1+5+9=23; total=43; check=(10-3)%10=7 → last digit must be 7
+    // Use the well-known test value 12345678903 (widely used in Italian dev docs)
+    await expect(
+      evaluateSubmitGuard('P.IVA 12345678903', null, {
+        healthCheck: vi.fn().mockResolvedValue(true),
+      }),
+    ).resolves.toMatchObject({
+      allowed: false,
+      state: 'never_sanitized',
+    });
+  });
+
+  it('does not block text containing a random 11-digit number with invalid checksum', async () => {
+    // 12345678900 — last digit 0, but checksum gives 3 → invalid
+    await expect(
+      evaluateSubmitGuard('Ordine 12345678900', null, {
+        healthCheck: vi.fn().mockResolvedValue(true),
+      }),
+    ).resolves.toMatchObject({
+      allowed: true,
+      state: 'manual_current',
+    });
+  });
+
+  it('does not block a 6-digit ticket number that happens to contain an 11-digit substring when padded', async () => {
+    // Pure short ticket reference — no 11-digit boundary match
+    await expect(
+      evaluateSubmitGuard('Ticket #12345', null, {
+        healthCheck: vi.fn().mockResolvedValue(true),
+      }),
+    ).resolves.toMatchObject({
+      allowed: true,
+      state: 'manual_current',
+    });
+  });
+});

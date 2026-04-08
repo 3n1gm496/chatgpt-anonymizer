@@ -19,14 +19,17 @@ The maintained security baseline assumes:
 - strict localhost-only engine binding enforced in code
 - no remote sanitization services, telemetry, or analytics
 - encrypted session persistence with installation secret, derived session secret, and record-scoped DEK
-- submit guard blocks unsanitized or stale content
+- submit guard blocks unsanitized or stale content; PARTITA_IVA detection uses checksum validation to prevent false positives on ticket numbers and phone numbers
 - local response rehydration only mutates the current DOM
 - shared contracts in `packages/contracts` reduce schema drift between extension and engine
 - CI covers engine unit/integration, extension unit/integration, and fixture-based e2e
+- engine endpoints protected by bearer-token middleware (token generated at startup, surfaced via health endpoint)
+- IBAN detection uses full MOD-97 checksum (ISO 13616); payment card detection uses Luhn algorithm + BIN-prefix filter
+- secrets detector covers AWS access keys, GitHub/GitLab PATs, Stripe keys, npm tokens, Google API keys, JWTs, PEM private keys, Bearer tokens, and database connection strings
 
 ## Known Security Limitations
 
-- manual typing after sanitization can still introduce sensitive text
+- manual typing after sanitization can still introduce sensitive text; the contextual heuristic detector helps catch labeled names and usernames but is not exhaustive
 - text-node-based rehydration remains conservative and not structure-aware for every rich response layout
 - local browser compromise or malicious extension interference is outside the app's control
 - duplicate-tab isolation depends on a valid browser `tabId`

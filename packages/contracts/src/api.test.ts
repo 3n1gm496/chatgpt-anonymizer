@@ -15,7 +15,7 @@ describe('contracts', () => {
       status: 'ok',
       engineVersion: '0.1.0',
       bind: '127.0.0.1',
-      mlEnabled: false,
+      heuristicsEnabled: false,
       detectors: ['regex', 'dictionary'],
       storage: {
         encrypted: true,

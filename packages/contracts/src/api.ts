@@ -14,7 +14,9 @@ export const healthResponseSchema = z.object({
   status: z.enum(['ok', 'degraded']),
   engineVersion: z.string().min(1),
   bind: z.literal('127.0.0.1'),
-  mlEnabled: z.boolean(),
+  // heuristicsEnabled replaces the previous mlEnabled field.
+  // The contextual detector uses regex heuristics, not machine learning.
+  heuristicsEnabled: z.boolean(),
   detectors: z.array(z.string().min(1)),
   storage: z.object({
     encrypted: z.boolean(),
@@ -33,10 +35,11 @@ export const sanitizeRequestSchema = z.object({
   exclusions: z.array(z.string().min(1)).default([]),
   options: z
     .object({
-      enableMl: z.boolean().default(false),
+      // enableHeuristics replaces enableMl — no ML is involved.
+      enableHeuristics: z.boolean().default(true),
       sessionTtlMinutes: z.number().int().positive().max(1_440).optional(),
     })
-    .default({ enableMl: false }),
+    .default({ enableHeuristics: true }),
 });
 export type SanitizeRequest = z.infer<typeof sanitizeRequestSchema>;
 
@@ -74,3 +77,9 @@ export const revertResponseSchema = z.object({
   replacements: z.array(rehydrationMatchSchema),
 });
 export type RevertResponse = z.infer<typeof revertResponseSchema>;
+
+// Engine auth token — returned by GET /engine-token
+export const engineTokenResponseSchema = z.object({
+  token: z.string().min(1),
+});
+export type EngineTokenResponse = z.infer<typeof engineTokenResponseSchema>;

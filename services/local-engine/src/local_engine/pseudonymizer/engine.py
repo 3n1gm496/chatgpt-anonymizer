@@ -4,7 +4,20 @@ from local_engine.models.domain_models import RawFinding, SessionRecord, make_lo
 
 
 class PseudonymizerEngine:
-    PREFIXES = {
+    """
+    Assigns deterministic placeholder tokens to detected entities.
+
+    Placeholders have the form ``[PREFIX_NNN]`` where PREFIX is a short
+    mnemonic for the entity type and NNN is a zero-padded counter that
+    increments per session per prefix.  The same entity value always maps
+    to the same placeholder within a session (via the reverse-lookup index).
+
+    This produces reversible pseudonymisation, not anonymisation.  The
+    original-to-placeholder mapping is stored in the ``SessionRecord`` and
+    persisted encrypted to disk by ``EncryptedSessionStore``.
+    """
+
+    PREFIXES: dict[str, str] = {
         "EMAIL": "EMAIL",
         "IPV4": "IPV4",
         "IPV6": "IPV6",
@@ -15,6 +28,12 @@ class PseudonymizerEngine:
         "PHONE": "PHONE",
         "CODICE_FISCALE": "CF",
         "PARTITA_IVA": "VAT",
+        "IBAN": "IBAN",
+        "PAYMENT_CARD": "CARD",
+        "SECRET": "SECRET",
+        "DATE_OF_BIRTH": "DOB",
+        "ADDRESS": "ADDR",
+        "NATIONAL_ID": "NID",
         "CUSTOM": "TOKEN",
     }
 

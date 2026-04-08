@@ -91,7 +91,7 @@ export async function sanitizeInterceptedText(
       detectedContentType,
       exclusions: [],
       options: {
-        enableMl: true,
+        enableHeuristics: true,
       },
     });
 
@@ -191,7 +191,7 @@ export async function sanitizeComposerText(
       detectedContentType,
       exclusions: [],
       options: {
-        enableMl: true,
+        enableHeuristics: true,
       },
     });
 
@@ -312,6 +312,16 @@ export function registerPasteInterceptor(
       return;
     }
 
+    // CRITICAL: preventDefault MUST be called synchronously before any await.
+    // An async function suspends at the first await, returning control to the
+    // event loop. At that point the browser fires the default paste behaviour
+    // and commits the original unsanitised text to the composer DOM.
+    // Calling preventDefault() here — while still in the synchronous portion
+    // of the handler — suppresses that default delivery. The clipboardData
+    // reference remains valid across the async boundary because it is captured
+    // in the closure before any suspension occurs.
+    event.preventDefault();
+
     const hasFiles = dataTransferContainsFiles(event.clipboardData);
     const extracted = await extractSanitizableTextFromDataTransfer(
       event.clipboardData,
@@ -329,7 +339,6 @@ export function registerPasteInterceptor(
       return;
     }
 
-    event.preventDefault();
     options.onProcessing('paste');
     try {
       const result = await sanitizeInterceptedText(text, 'paste', {
@@ -360,6 +369,13 @@ export function registerPasteInterceptor(
       return;
     }
 
+    // CRITICAL: same race fix as handlePaste — preventDefault must be called
+    // synchronously before the first await. For drag-and-drop this is even
+    // more important: without early prevention the browser fires the native
+    // file-upload handler, potentially sending the original unprocessed file
+    // directly to ChatGPT before local pseudonymisation has occurred.
+    event.preventDefault();
+
     const hasFiles = dataTransferContainsFiles(event.dataTransfer);
     const extracted = await extractSanitizableTextFromDataTransfer(
       event.dataTransfer,
@@ -377,7 +393,6 @@ export function registerPasteInterceptor(
       return;
     }
 
-    event.preventDefault();
     options.onProcessing('drop');
     try {
       const result = await sanitizeInterceptedText(text, 'drop', {
